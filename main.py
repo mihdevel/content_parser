@@ -4,7 +4,7 @@ from urllib.request import urlopen
 
 
 
-class GetArgs():
+class GetArgs:
   def __init__(self):
     # Получение аргументов коммандной строки
     parser_opt = OptionParser()
@@ -16,19 +16,22 @@ class GetArgs():
 
 
 
-class GetContentText():
-  def __init__(self):
+class GetContentText:
+  def __init__(self, url):
     # Получение html
-    response = urlopen(options.url)
+    self.content_text = {}
+    response = urlopen(url)
     html = response.read()
     parsed_html = BeautifulSoup(html)
-    print(parsed_html)
-    # print(parsed_html.body.find('div', attrs={'class': 'toc'}))
+    self.content_text['h1'] = (parsed_html.body.find('h1'))
+    self.content_text['p'] = (parsed_html.body.find_all('p'))
+    
+  def return_content_text(self):
+    return self.content_text
 
 
 
-
-class FormatContentText():
+class FormatingContentText:
   def __init__(self):
     self.max_line_size = 80
     self.word_transferring = True
@@ -36,24 +39,16 @@ class FormatContentText():
 
 
 
-# class OutputNameFormatThroughUrl():
-#
-#   def get_folders_and_name_file(self, url):
-#     pass
-#
-#   def create_folders_and_text_file(self, dict):
-#     pass
-
-
-
-
-
-class Main():
+class Main:
   args_command_line = GetArgs()
   url = args_command_line.get_url()
-  print(url)
+  obj_get_content_text = GetContentText(url)
+  content_text = obj_get_content_text.return_content_text()
   
-
+  
+  
+  # print(content_text)
+  
 
 
 if __name__ == '__main__':

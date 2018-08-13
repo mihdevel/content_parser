@@ -3,7 +3,8 @@ from bs4 import BeautifulSoup
 from urllib.request import urlopen
 from textwrap import wrap
 import re
-
+import os
+from config import max_size_line, allocation_captions_and_paragrapf, name_file_from_url_format
 
 
 class GetArgs:
@@ -43,23 +44,48 @@ class GetContentText:
 
 class FormatingContentText:
   # Форматирование контента
-  def __init__(self):
-    self.max_size_line = 80
-    self.word_transferring = True
-    self.allocation_captions_and_paragrapf = True
+  def __init__(self, max_size_line):
+    self.max_size_line = max_size_line
    
     
   def split_string(self, text):
-      # Разбиение длинной строки на короткие
-      if self.word_transferring == True and len(text) > self.max_size_line:
-        text = wrap(text.text, self.max_size_line)
-      return text
+    # Разбиение длинной строки на короткие
+    if len(text) > self.max_size_line:
+      text = wrap(text, self.max_size_line)
+    return text
+  
+  
+  def url_reformat(self, text):
+    pattern_link = '<a.*href\=\"(?P<url>.*?)\".*</a>'
+    while re.search(pattern_link, text):
+      text = re.sub(pattern_link, ' [\g<url>] ', text)
+    
+    return text
 
+  
 
-
-class FileWriting:
-  def __init__(self, text):
-    with open('article.txt', 'a') as file:
+class TextToFile:
+  def __init__(self, name_file_from_url_format, url, default_file_name='article.txt'):
+    if name_file_from_url_format:
+      
+      pattern_url = '/(https?:\/\/)?(?P<new_url>([\da-z\.-]+)\.(?P<file_name>[a-z\.]{2,6})([\/\w \.-]*)*\/?)'
+      str_url_reformat = re.search(pattern_url, url).group('new_url')
+      
+      url_structure = str_url_reformat.split('/')
+      for folder in url_structure[:-1]:
+        os.mkdir(folder)
+        os.chdir(folder)
+        
+      self.file_name = url_structure.pop()
+      
+      if not self.file_name:
+        self.file_name = default_file_name
+    else:
+      self.file_name = default_file_name
+  
+  
+  def writing(self, text):
+    with open(self.file_name, 'a') as file:
       
       if type(text) == list:
         for line in text: file.write(line.strip() + '\n')
@@ -76,19 +102,21 @@ class Main:
   process = GetContentText(url)
   caption_article = process.get_caption_article()
   main_text_article = process.get_main_text_article()
-  
-  format_text = FormatingContentText()
+
+  format_text = FormatingContentText(max_size_line)
+  file_obj = TextToFile(name_file_from_url_format, url)
 
   # Форматирование и запись заголовка
-  if format_text.allocation_captions_and_paragrapf == True:
+  if allocation_captions_and_paragrapf:
     caption_article = format_text.split_string(caption_article)
-  FileWriting(caption_article)
+  file_obj.writing(caption_article)
 
   # Форматирование и запись основного текста
   for text in main_text_article:
     text = format_text.split_string(text)
-    # FileWriting(text)
-
+    # text = format_text.url_reformat(text)
+    # print(text)
+    # file_obj.writing(text)
 
 
 if __name__ == '__main__':
